@@ -1,0 +1,40 @@
+const jwt = require('jsonwebtoken');
+const User = require('./models/user');
+
+const authenticateUser = async (req, res, next) => {
+    try {
+        const token = req.header('Authorization').replace('Bearer ', '');
+        if (!token) {
+            return res.status(401).json({ error: 'Authorization token not provided.' });
+        }
+
+        const decodedToken = jwt.verify(token, 'your_secret_key_here');
+        const user = await User.findOne({ _id: decodedToken._id, 'tokens.token': token });
+
+        if (!user) {
+            throw new Error();
+        }
+
+        req.user = user;
+        req.token = token;
+        next();
+    } catch (error) {
+        res.status(401).json({ error: 'Authentication failed.' });
+    }
+};
+
+const authorizeAdmin = (req, res, next) => {
+    if (!req.user.isAdmin) {
+        return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+    }
+    next();
+};
+
+const authorizeUser = (req, res, next) => {
+    if (req.user.isAdmin) {
+        return res.status(403).json({ error: 'Access denied. Regular user privileges required.' });
+    }
+    next();
+};
+
+module.exports = { authenticateUser, authorizeAdmin, authorizeUser };

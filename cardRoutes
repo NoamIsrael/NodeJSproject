@@ -1,0 +1,111 @@
+const express = require('express');
+const Card = require('./models/card');
+const User = require('./models/user');
+const { authorizeAdmin, authorizeUser } = require('./authMiddleware');
+
+
+const router = express.Router();
+
+// Get all cards
+router.get('/cards', async (req, res) => {
+    try {
+        const cards = await Card.find({ isDeleted: false });
+        res.status(200).json(cards);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get card by ID
+router.get('/cards/:id', async (req, res) => {
+    try {
+        const cardId = req.params.id;
+        const card = await Card.findById(cardId);
+
+        if (!card || card.isDeleted) {
+            return res.status(404).json({ error: 'Card not found' });
+        }
+
+        res.status(200).json(card);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Create a new card
+router.post('/cards', async (req, res) => {
+    try {
+        const { title, content } = req.body;
+
+        const newCard = new Card({
+            title,
+            content,
+        });
+
+        await newCard.save();
+        res.status(201).json({ message: 'Card created successfully', card: newCard });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Update card
+router.put('/cards/:id', async (req, res) => {
+    try {
+        const cardId = req.params.id;
+        const { title, content } = req.body;
+
+        const card = await Card.findById(cardId);
+
+        if (!card || card.isDeleted) {
+            return res.status(404).json({ error: 'Card not found' });
+        }
+
+        card.title = title;
+        card.content = content;
+        await card.save();
+
+        res.status(200).json({ message: 'Card updated successfully', card });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Soft delete card
+router.patch('/cards/:id', async (req, res) => {
+    try {
+        const cardId = req.params.id;
+
+        const card = await Card.findById(cardId);
+
+        if (!card || card.isDeleted) {
+            return res.status(404).json({ error: 'Card not found' });
+        }
+
+        card.isDeleted = true;
+        await card.save();
+
+        res.status(200).json({ message: 'Card deleted successfully', card });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Permanently delete card
+router.delete('/cards/:id', async (req, res) => {
+    try {
+        const cardId = req.params.id;
+
+        const card = await Card.findByIdAndDelete(cardId);
+
+        if (!card || card.isDeleted) {
+            return res.status(404).json({ error: 'Card not found' });
+        }
+
+        res.status(200).json({ message: 'Card deleted permanently', card });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+module.exports = router;

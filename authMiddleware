@@ -1,0 +1,16 @@
+const jwt = require('jsonwebtoken');
+const User = require('./models/user');
+
+const authenticateUser = async (req, res, next) => {
+    // ... (middleware logic)
+};
+
+const authorizeAdmin = (req, res, next) => {
+    // ... (middleware logic)
+};
+
+const authorizeUser = (req, res, next) => {
+    // ... (middleware logic)
+};
+
+module.exports = { authenticateUser, authorizeAdmin, authorizeUser };
